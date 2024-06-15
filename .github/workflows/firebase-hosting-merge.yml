@@ -18,3 +18,5 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_YCTU_CBD4C }}
           channelId: live
           projectId: yctu-cbd4c
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
