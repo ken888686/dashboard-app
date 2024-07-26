@@ -1,7 +1,21 @@
+"use client";
+import { Spinner } from "@nextui-org/react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+
 export default function Home() {
-  return (
-    <main className="flex h-dvh flex-col items-center justify-center bg-gray-400">
-      Dashboard App
-    </main>
-  );
+  const { status } = useSession();
+
+  const content = () => {
+    switch (status) {
+      case "unauthenticated":
+        redirect("/login");
+      case "loading":
+        return <Spinner size="lg" label="Loading..." aria-label="Loading..." color="primary" />;
+      case "authenticated":
+        return "Dashboard App";
+    }
+  };
+
+  return <main className="flex h-dvh flex-col items-center justify-center">{content()}</main>;
 }
