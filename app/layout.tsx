@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NavbarElement from "./components/navbar";
 import "./globals.scss";
 import { Providers } from "./providers";
 
@@ -14,8 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body>
-        <Providers>{children}</Providers>
+      <body suppressHydrationWarning={true}>
+        <Providers>
+          <NavbarElement />
+          {children}
+        </Providers>
       </body>
     </html>
   );

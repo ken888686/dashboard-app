@@ -1,5 +1,6 @@
 "use client";
 import { Button, Input } from "@nextui-org/react";
+import { HttpStatusCode } from "axios";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,16 +20,17 @@ export default function EmailLoginForm() {
         email,
         password,
       });
-
-      if (result?.ok) {
-        console.log(result);
-      } else if (result?.error) {
+      if (result?.error) {
         const error: {
           status: number;
           message: string;
           name: string;
         } = JSON.parse(result.error as string);
-        setError(error.message);
+        if (error.status === HttpStatusCode.NotFound) {
+          router.push(`/sign-up?email=${encodeURIComponent(email as string)}`);
+        } else {
+          setError(error.message);
+        }
       }
     } catch (error) {
       console.error(error);

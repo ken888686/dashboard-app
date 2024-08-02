@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/app/lib/axios";
 import { CreateUserDto, User } from "@/app/models/user";
-import { AxiosError, HttpStatusCode } from "axios";
+import { AxiosError } from "axios";
 import jwt from "jsonwebtoken";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -11,8 +11,8 @@ async function createUser(userData: CreateUserDto, token: string) {
   return await axiosInstance.put<User>("/user", userData);
 }
 
-async function signUpWithEmailAndPassword(email: string, password: string) {
-  return await axiosInstance.post("/auth/signup", { email, password });
+async function signUpWithEmailAndPassword(email: string, password: string, name: string) {
+  return await axiosInstance.post("/auth/signup", { email, password, displayName: name });
 }
 
 async function loginWithPassword(email: string, password: string) {
@@ -32,35 +32,38 @@ const handler = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        name: { label: "Name", type: "text" },
+        isNewUser: { label: "Is New User", type: "boolean" },
       },
       async authorize(credentials) {
         try {
-          const { data } = await loginWithPassword(
-            credentials?.email as string,
-            credentials?.password as string,
-          );
-          return data;
+          if (credentials?.isNewUser === "true") {
+            const { data } = await signUpWithEmailAndPassword(
+              credentials?.email as string,
+              credentials?.password as string,
+              credentials?.name as string,
+            );
+            return data;
+          } else {
+            const { data } = await loginWithPassword(
+              credentials?.email as string,
+              credentials?.password as string,
+            );
+            return data;
+          }
         } catch (error) {
           const axiosError = error as AxiosError<{
             status: number;
             message: string;
             name: string;
           }>;
-          if (axiosError.response?.data.status === HttpStatusCode.NotFound) {
-            const { data } = await signUpWithEmailAndPassword(
-              credentials?.email as string,
-              credentials?.password as string,
-            );
-            return data;
-          } else {
-            throw new Error(
-              JSON.stringify({
-                status: axiosError.response?.data.status,
-                message: axiosError.response?.data.message,
-                name: axiosError.response?.data.name,
-              }),
-            );
-          }
+          throw new Error(
+            JSON.stringify({
+              status: axiosError.response?.data.status,
+              message: axiosError.response?.data.message,
+              name: axiosError.response?.data.name,
+            }),
+          );
         }
       },
     }),
@@ -92,8 +95,9 @@ const handler = NextAuth({
             });
 
             const { data } = await createUser(userData, token);
-            user.id = data.id;
+            user.id = data.id as number;
             user.customJwt = token;
+            user.email_verified = profile?.email_verified ?? false;
             return true;
           } catch (error) {
             return false;
@@ -107,12 +111,14 @@ const handler = NextAuth({
               name: userInfo.displayName,
               email: userInfo.email,
               image: userInfo.photoUrl,
+              email_verified: userInfo.emailVerified,
             });
             user.id = userInfo?.id as number;
             user.name = userInfo?.displayName;
             user.email = userInfo?.email;
             user.image = userInfo?.photoUrl;
             user.customJwt = token;
+            user.email_verified = userInfo?.emailVerified ?? false;
             return true;
           } catch (error) {
             return false;
@@ -125,6 +131,7 @@ const handler = NextAuth({
       session.accessToken = token.accessToken;
       session.user.id = token.id;
       session.customJwt = token.customJwt;
+      session.user.email_verified = token.email_verified;
       return session;
     },
     async jwt({ token, user, account, profile }) {
@@ -132,6 +139,7 @@ const handler = NextAuth({
         token.accessToken = account.access_token;
         token.id = user.id as number;
         token.customJwt = user.customJwt;
+        token.email_verified = user.email_verified;
       }
       return token;
     },
@@ -147,7 +155,9 @@ declare module "next-auth/jwt" {
   interface JWT {
     accessToken?: string;
     id: number;
-    customJwt?: string;
+    customJwt: string;
+    email_verified: boolean;
+    name?: string;
   }
 }
 
@@ -160,6 +170,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      email_verified: boolean;
     };
   }
 
@@ -173,5 +184,7 @@ declare module "next-auth" {
     id: number;
     customJwt: string;
     access_token: string;
+    email_verified: boolean;
+    name?: string | null;
   }
 }

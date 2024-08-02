@@ -13,9 +13,13 @@ export default function Home() {
       case "loading":
         return <Spinner size="lg" label="Loading..." aria-label="Loading..." color="primary" />;
       case "authenticated":
-        return "Dashboard App";
+        return (
+          <div>
+            <div>Dashboard App</div>
+          </div>
+        );
     }
   };
 
-  return <main className="flex h-dvh flex-col items-center justify-center">{content()}</main>;
+  return <main className="flex flex-col items-center">{content()}</main>;
 }
