@@ -11,18 +11,14 @@ export default function GoogleButton() {
   switch (status) {
     case "loading":
       return (
-        <Button className="w-60" isLoading>
+        <Button className="w-full" isLoading>
           Loading...
         </Button>
       );
     case "unauthenticated":
       return (
-        <Button
-          onClick={() => signIn("google")}
-          className="w-60"
-          startContent={<GoogleIcon />}
-        >
-          Sign in with Google
+        <Button onClick={() => signIn("google")} className="w-full" startContent={<GoogleIcon />}>
+          Login with Google
         </Button>
       );
     case "authenticated":
@@ -31,9 +27,9 @@ export default function GoogleButton() {
           onClick={() => signOut()}
           onMouseOver={() => setHover(true)}
           onMouseLeave={() => setHover(false)}
-          className="w-60 bg-success-500 text-black hover:bg-danger-500"
+          className="w-full bg-success-500 text-black hover:bg-danger-500"
         >
-          {hover ? "Sign out" : `Hi! ${session?.user?.name}`}
+          {hover ? "Log out" : `Hi! ${session?.user?.name}`}
         </Button>
       );
   }
